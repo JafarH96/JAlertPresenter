@@ -8,7 +8,7 @@ public class JAlertPresenter: NSObject {
     /// The priority queue that stores the alert controllers that will be presented
     public private(set) var alertQueue: [UUID: JAlertQueueStructure] = [:]
     /// The root view controller that the alert controllers will be present on it
-    public let rootViewController: UIViewController
+    public private(set) weak var rootViewController: UIViewController?
     
     
     public required init(rootViewController: UIViewController) {
@@ -105,14 +105,14 @@ extension JAlertPresenter {
     private func present(_ alert: UIViewController) {
         DispatchQueue.main.async {
             let currentKey = UUID(uuidString: alert.restorationIdentifier!)!
-            if let presented = self.rootViewController.presentedViewController {
+            if let presented = self.rootViewController?.presentedViewController {
                 let previousKey = UUID(uuidString: presented.restorationIdentifier!)!
                 self.alertQueue[previousKey]?.state = .inQueue
                 presented.dismiss(animated: false) {
-                    self.rootViewController.present(alert, animated: true, completion: self.alertQueue[currentKey]?.completion)
+                    self.rootViewController?.present(alert, animated: true, completion: self.alertQueue[currentKey]?.completion)
                 }
             } else {
-                self.rootViewController.present(alert, animated: true, completion: self.alertQueue[currentKey]?.completion)
+                self.rootViewController?.present(alert, animated: true, completion: self.alertQueue[currentKey]?.completion)
             }
         }
     }
