@@ -106,10 +106,17 @@ extension JAlertPresenter {
         DispatchQueue.main.async {
             let currentKey = UUID(uuidString: alert.restorationIdentifier!)!
             if let presented = self.rootViewController?.presentedViewController {
-                let previousKey = UUID(uuidString: presented.restorationIdentifier!)!
-                self.alertQueue[previousKey]?.state = .inQueue
-                presented.dismiss(animated: false) {
-                    self.rootViewController?.present(alert, animated: true, completion: self.alertQueue[currentKey]?.completion)
+                if let restorationIdentifier = presented.restorationIdentifier {
+                    if let previousKey = UUID(uuidString: restorationIdentifier) {
+                        self.alertQueue[previousKey]?.state = .inQueue
+                    }
+                }
+                if (presented is UIAlertController) || (presented is JUIAlertController) {
+                    presented.dismiss(animated: false) {
+                        self.rootViewController?.present(alert, animated: true, completion: self.alertQueue[currentKey]?.completion)
+                    }
+                } else {
+                    presented.present(alert, animated: true, completion: self.alertQueue[currentKey]?.completion)
                 }
             } else {
                 self.rootViewController?.present(alert, animated: true, completion: self.alertQueue[currentKey]?.completion)
