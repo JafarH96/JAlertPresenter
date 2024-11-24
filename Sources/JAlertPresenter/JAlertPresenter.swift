@@ -78,22 +78,36 @@ extension JAlertPresenter {
             return
         }
         
-        if let alert = alertQueue.highestOrderAlert, alert.state == .inQueue {
-            if let presentedAlert = alertQueue.currentAlert {
-                if presentedAlert >= alert {
+        if let alert = alertQueue.highestOrderAlert {
+            if alert.state == .inQueue {
+                if let presentedAlert = alertQueue.currentAlert {
+                    if presentedAlert >= alert {
+                        return
+                    }
+                    
+                    presentedAlert.state = .inQueue
+                    presentedAlert.alert.dismiss(animated: true) {[weak self] in
+                        guard let self else { return }
+                        alert.state = .presenting
+                        present(alert.alert)
+                    }
                     return
                 }
-                
-                presentedAlert.state = .inQueue
-                presentedAlert.alert.dismiss(animated: true) {[weak self] in
-                    guard let self else { return }
-                    alert.state = .presenting
-                    present(alert.alert)
+                alert.state = .presenting
+                present(alert.alert)
+            } else if alert.state == .presenting {
+                if let presented = self.rootViewController?.presentedViewController {
+                    if alert.alert.restorationIdentifier != presented.restorationIdentifier {
+                        let uuid = UUID(uuidString: alert.alert.restorationIdentifier!)!
+                        self.alertQueue[uuid]?.state = .presented
+                        refresh()
+                    }
+                } else {
+                    let uuid = UUID(uuidString: alert.alert.restorationIdentifier!)!
+                    self.alertQueue[uuid]?.state = .presented
+                    refresh()
                 }
-                return
             }
-            alert.state = .presenting
-            present(alert.alert)
         }
     }
     
